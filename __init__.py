@@ -7,8 +7,12 @@ Created by ML 2014.08
 from datagen import datagen
 import numpy as _np
 from scipy.stats import zscore as _zs
+from scipy import linalg as la
+import os
 #import fmri #? 
 #import stats #? 
+
+boilerplate_file = os.path.join(os.path.split(__file__)[0],'boilerplate.py')
 
 def from_x(X,wts,signal_corr=1.0,do_zscore=True):
 	"""Make fake data from some design matrix + weights on each channel in it.
@@ -62,7 +66,7 @@ def from_x(X,wts,signal_corr=1.0,do_zscore=True):
 		dat = _zs(dat)
 	return dat
 
-def from_matrix(data,sz,signal_corr=None,shuf_channels=False,do_zscore=True):
+def from_matrix(data,sz,signal_corr=None,shuf_channels=False,do_zscore=True,corr_falloff=None):
 	"""Generate fake data such that some columns share variance w/ input matrix
 	
 	<Blah>
@@ -95,7 +99,7 @@ def from_matrix(data,sz,signal_corr=None,shuf_channels=False,do_zscore=True):
 	m_out,n_out = sz
 	if n_out>n_in or m_out>m_in:
 		raise Exception('Output shape must be <= shape of input data in all dimensions')
-	
+	raise NotImplementedError('This is currently borked right here. Need to define size of matrix wrt inputs.')
 	if corr_falloff is None:
 		corr_falloff = _np.ones((n))
 	# Make common data
@@ -123,6 +127,9 @@ def from_matrix(data,sz,signal_corr=None,shuf_channels=False,do_zscore=True):
 
 def from_svd(S,m,n,U=None,V=None,do_zscore=True):
 	"""Generate matrix based on U,S,V matrices as in Singular Value Decomposition
+
+	This is a useful way to generate a random matrix with some degree of internal structure (i.e., 
+	some amount of correlation between columns or rows). 
 
 	Parameters
 	----------
@@ -152,10 +159,17 @@ def from_svd(S,m,n,U=None,V=None,do_zscore=True):
 	elif n>m:
 		S = _np.pad(S,[(0,0),(0,n-m)],mode='constant')
 	if U is None:
+		# Need orthogonal matrix, such that U.T.dot(U) = U.dot(U.T) = Identity   sqrtm, inv
 		U = _np.random.randn(m,m)
+		U = U.dot(la.inv(la.sqrtm(U.T.dot(U))))
+		#print("U orthogonality test:") # works. off-diagonal are <10e-14, diagonal values are ~1
+		#print(U.T.dot(U))
 	if V is None:
 		V = _np.random.randn(n,n)
-	M = (U.dot(S)).dot(V.T)
+		V = V.dot(la.inv(la.sqrtm(V.T.dot(V))))
+		#print("V orthogonality test:")
+		#print(V.T.dot(V))
+	M = U.dot(S).dot(V.T)
 	if do_zscore:
 		M = _zs(M)
 	return M
@@ -177,3 +191,4 @@ def add_noise_cols(X,n):
 	Look into _np.pad (with padding function) to do this...
 	"""
 	return _np.hstack((X,_np.random.randn(X.shape[0],n)))
+
