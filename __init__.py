@@ -7,8 +7,8 @@ Created by ML 2014.08
 from datagen import datagen
 import numpy as _np
 from scipy.stats import zscore as _zs
-#import fmri #? 
-#import stats #? 
+from . import fmri #? 
+from . import stats #? 
 
 def from_x(X,wts,signal_corr=1.0,do_zscore=True):
 	"""Make fake data from some design matrix + weights on each channel in it.
