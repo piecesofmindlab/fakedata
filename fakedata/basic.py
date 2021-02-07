@@ -196,13 +196,22 @@ def get_correlated_signal(x,signal_corr=0.5,noise=None,do_zscore=False):
         y = zscore(y)
     return y
 
+def make_orthogonal_matrix(m, n):
+    # Start with a random matrix
+    data = _np.random.randn(n, m)
+    # Zscore to enforce de-meaning
+    data = zscore(data, axis=1)
+
+    U, S, Vt = la.svd(data, full_matrices=False)
+    return Vt.T
+
 def rand_unitary_matrix(N):
     """Get a random unitary matrix
 
     A unitary matrix is an orthogonal matrix, such that U.T.dot(U) = U.dot(U.T) = Identity 
     """
     # Start with random
-    U = _np.random.randn(N,N)
+    U = _np.random.randn(N, N)
     # Enforce 
     U = U.dot(la.inv(la.sqrtm(U.T.dot(U))))
     # This works. Off-diagonal are <10e-14, diagonal values are ~1 . To show:
